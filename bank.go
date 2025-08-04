@@ -1,3 +1,5 @@
+
+
 package main
 
 import (
@@ -14,10 +16,11 @@ type Account struct {
 }
 
 type Transaction struct {
-    ID        string
-    Type      string
-    Amount    float64
-    Timestamp time.Time
+    ID            string
+    AccountNumber string
+    Type          string
+    Amount        float64
+    Timestamp     time.Time
 }
 
 type Bank struct {
@@ -57,7 +60,8 @@ func displayMenu() {
     fmt.Println("2. Deposit Money")
     fmt.Println("3. Withdraw Money")
     fmt.Println("4. Check Balance")
-    fmt.Println("5. Exit")
+    fmt.Println("5. View Transaction History")
+    fmt.Println("6. Exit")
 }
 
 func getUserInput() string {
@@ -87,6 +91,34 @@ func (bank *Bank) AddTransaction(t *Transaction) {
     bank.TransactionHistory = append(bank.TransactionHistory, t)
 }
 
+func (bank *Bank) GetTransactionHistory(accountNumber string) []*Transaction {
+    var accountTransactions []*Transaction
+    for _, transaction := range bank.TransactionHistory {
+        if transaction.AccountNumber == accountNumber {
+            accountTransactions = append(accountTransactions, transaction)
+        }
+    }
+    return accountTransactions
+}
+
+func (bank *Bank) DisplayTransactionHistory(accountNumber string) {
+    transactions := bank.GetTransactionHistory(accountNumber)
+    if len(transactions) == 0 {
+        fmt.Println("No transactions found for this account.")
+        return
+    }
+    
+    fmt.Printf("Transaction History for Account: %s\n", accountNumber)
+    fmt.Println("----------------------------------------")
+    for _, transaction := range transactions {
+        fmt.Printf("ID: %s\n", transaction.ID)
+        fmt.Printf("Type: %s\n", transaction.Type)
+        fmt.Printf("Amount: %.2f\n", transaction.Amount)
+        fmt.Printf("Date: %s\n", transaction.Timestamp.Format("2006-01-02 15:04:05"))
+        fmt.Println("----------------------------------------")
+    }
+}
+
 func main() {
     bank := &Bank{
         Name:              "Go Bank",
@@ -102,7 +134,7 @@ func main() {
         case "1":
             fmt.Println("Enter holder name:")
             holderName := getUserInput()
-            fmt.Println("Enter account type: Savings or Checking")
+            fmt.Println("Enter account type:")
             accountType := getUserInput()
             bank.CreateAccount(holderName, accountType)
         case "2":
@@ -121,10 +153,11 @@ func main() {
                 fmt.Println("Error:", err)
             } else {
                 bank.AddTransaction(&Transaction{
-                    ID:        generateAccountNumber(),
-                    Type:      "deposit",
-                    Amount:    amount,
-                    Timestamp: time.Now(),
+                    ID:            generateAccountNumber(),
+                    AccountNumber: accountNumber,
+                    Type:          "deposit",
+                    Amount:        amount,
+                    Timestamp:     time.Now(),
                 })
                 fmt.Println("Deposit successful.")
             }
@@ -144,10 +177,11 @@ func main() {
                 fmt.Println("Error:", err)
             } else {
                 bank.AddTransaction(&Transaction{
-                    ID:        generateAccountNumber(),
-                    Type:      "withdrawal",
-                    Amount:    amount,
-                    Timestamp: time.Now(),
+                    ID:            generateAccountNumber(),
+                    AccountNumber: accountNumber,
+                    Type:          "withdrawal",
+                    Amount:        amount,
+                    Timestamp:     time.Now(),
                 })
                 fmt.Println("Withdrawal successful.")
             }
@@ -161,6 +195,15 @@ func main() {
             }
             fmt.Printf("Balance: %.2f\n", account.GetBalance())
         case "5":
+            fmt.Println("Enter account number:")
+            accountNumber := getUserInput()
+            _, exists := bank.Accounts[accountNumber]
+            if !exists {
+                fmt.Println("Account not found.")
+                continue
+            }
+            bank.DisplayTransactionHistory(accountNumber)
+        case "6":
             fmt.Println("Exiting...")
             return
         default:
